@@ -14,10 +14,7 @@ import logging
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler("debug.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
 )
 
 
@@ -41,8 +38,14 @@ class SnykParser:
 
     def load_vulnerabilities(self):
         """Parse html table into vulnerabilities using heuristics (i.e. look at it and figure out what you want)"""
+        logging.info(f"Load vulnerabilities from {self.vuln_url}...")
         self.vulnerabilities = []
-        resp = requests.get(self.vuln_url)
+        try:
+            resp = requests.get(self.vuln_url)
+        except requests.exceptions.RequestException as e:
+            logging.error(
+                f"Failed to load vulnerabilities from {self.vuln_url} - {str(e)}."
+            )
         soup = BeautifulSoup(resp.text, features="lxml")
         for tr in soup.find("table").find("tbody").find_all("tr"):
             new_vuln = dict()
@@ -56,6 +59,7 @@ class SnykParser:
                 .text.strip()
             )
             self.vulnerabilities.append(new_vuln)
+        logging.info(f"Loaded {len(self.vulnerabilities)} vulnerabilities.")
 
     def is_version_vulnerable(self, in_version, vuln_version):
         """Check whether in_version is less than vuln_version or whether it is in between vuln versions (assuming all of these are semvers)
@@ -131,6 +135,7 @@ class SwaggerGitSearcher:
             else:
                 return versions[0]
         else:
+            logging.info(f'Unable to find version for tag "{shorthash}".')
             return None
 
 
@@ -155,6 +160,7 @@ class SwaggerDetector:
         elif len([x for x in srcs if "swagger-ui.js" in str(x)]) > 0:
             return 2
         else:
+            logging.info(f"Unable to detect major swagger-ui version.")
             return 0
 
     def detect_minor_3(self, url, srcs):
@@ -183,7 +189,11 @@ class SwaggerDetector:
             matches = re.search(r'"g[a-f0-9]{5,20}"', response.text)
             logging.debug(matches[0][2:-1])
             result = self.SGS.get_version_from_shorthash(matches[0][2:-1])
-        except (requests.exceptions.RequestException, IndexError, TypeError):
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to get swagger-ui bundle - {str(e)}")
+            result = "v3"
+        except (IndexError, TypeError) as e:
+            logging.info(f"Unable to detect minor swagger-ui version.")
             result = "v3"
         return result
 
@@ -195,11 +205,11 @@ class SwaggerDetector:
         url (string): Swagger-ui URL
 
         Returns:
-        version (string): exact semver version of swagger-ui used (or v3 if failed)
+        version (string): exact semver version of swagger-ui used (or v2 if failed)
         """
         result = None
         bundle = [x for x in srcs if "swagger-ui.js" in str(x)][0]
-        # print(f"bundle: {bundle}")
+        logging.debug(f"bundle: {bundle}")
         swag_bundle_url = ""
         if urllib.parse.urlparse(bundle).scheme != "":
             swag_bundle_url = bundle
@@ -207,14 +217,18 @@ class SwaggerDetector:
             swag_bundle_url = urllib.parse.urljoin(
                 "https://" + urllib.parse.urlparse(url).netloc, bundle
             )
-        # print(f"url: {swag_bundle_url}")
+        logging.debug(f"swag_bundle url: {swag_bundle_url}")
         try:
             # The main idea - version is mentioned at the start of swagger-ui.js file
             # go regex that version, it's the first occurence
             response = requests.get(swag_bundle_url, timeout=5)
             matches = re.search(r" * @version v[0-9a-z.]*", response.text)
             result = matches[0].split(" ")[2]
-        except (requests.exceptions.RequestException, IndexError, TypeError):
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to get swagger-ui bundle - {str(e)}")
+            result = "v2"
+        except (IndexError, TypeError) as e:
+            logging.info(f"Unable to detect minor swagger-ui version.")
             result = "v2"
         return result
 
@@ -233,7 +247,8 @@ class SwaggerDetector:
             response = requests.get(url, timeout=5)
             soup = BeautifulSoup(response.text, features="lxml")
             srcs = [x.get("src") for x in soup.find_all("script")]
-        except (requests.exceptions.RequestException, IndexError, TypeError):
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Failed to get swagger-ui - {str(e)}")
             return None
         major_version = self.detect_major(srcs)
         if major_version == 3:
@@ -260,12 +275,15 @@ if __name__ == "__main__":
             )
             writer.writeheader()
             row = dict()
+
             lines = f.read().splitlines()
+
             checks = {math.floor(len(lines) * x / 100): x for x in range(100)}
             counter = 0
+
             for url in lines:
                 if counter in checks:
-                    print(f"Status: {checks[counter]}%")
+                    logging.info(f"Status: {checks[counter]}%")
                 row["url"] = url
                 row["version"] = s.get_swagger_ui_version(url)
                 if row["version"] is not None and row["version"] != "None":
