@@ -9,12 +9,23 @@ import git
 import re
 import math
 from packaging import version
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("debug.log"),
+        logging.StreamHandler()
+    ]
+)
 
 
 SWAGGER_UI_REPO = "./swagger-ui"
-SWAGGERS_FILE = "./simple_and_nuclei_grouped.log"
+# SWAGGERS_FILE = "./simple_and_nuclei_grouped.log"
+SWAGGERS_FILE = "./urls_debug.txt"
 SNYK_URL = "https://security.snyk.io/vuln/npm?search=swagger-ui"
-OUTFILE = "./swaggers_rated.csv"
+OUTFILE = "./swaggers_rated_debug.csv"
 
 
 class SnykParser:
@@ -139,9 +150,9 @@ class SwaggerDetector:
         int: Major version (>=3, <=2 or 0 if fail)
         """
         # The idea is - if it gets swagger-ui-bundle.js is present then it's at least v3
-        if len([x for x in srcs if str(x).endswith("swagger-ui-bundle.js")]) > 0:
+        if len([x for x in srcs if "swagger-ui-bundle.js" in str(x)]) > 0:
             return 3
-        elif len([x for x in srcs if str(x).endswith("swagger-ui.js")]) > 0:
+        elif len([x for x in srcs if "swagger-ui.js" in str(x)]) > 0:
             return 2
         else:
             return 0
@@ -156,20 +167,23 @@ class SwaggerDetector:
         Returns:
         version (string): exact semver version of swagger-ui used (or v3 if failed)
         """
+        logging.debug(srcs)
         result = None
-        bundle = [x for x in srcs if str(x).endswith("swagger-ui-bundle.js")][0]
+        bundle = [x for x in srcs if "swagger-ui-bundle.js" in str(x)][0]
         swag_bundle_url = ""
         if urllib.parse.urlparse(bundle).scheme != "":
             swag_bundle_url = bundle
         else:
-            swag_bundle_url = urllib.parse.urljoin(url, "swagger-ui-bundle.js")
+            swag_bundle_url = urllib.parse.urljoin(url, bundle)
+        logging.debug(swag_bundle_url)
         try:
             # The main idea - there is only one string satisfying the regex below
             # this string without g is a short hash of a commit that is deployed
             response = requests.get(swag_bundle_url, timeout=5)
             matches = re.search(r'"g[a-f0-9]{5,20}"', response.text)
+            logging.debug(matches[0][2:-1])
             result = self.SGS.get_version_from_shorthash(matches[0][2:-1])
-        except (requests.exceptions.RequestException, IndexError):
+        except (requests.exceptions.RequestException, IndexError, TypeError):
             result = "v3"
         return result
 
@@ -184,7 +198,7 @@ class SwaggerDetector:
         version (string): exact semver version of swagger-ui used (or v3 if failed)
         """
         result = None
-        bundle = [x for x in srcs if str(x).endswith("swagger-ui.js")][0]
+        bundle = [x for x in srcs if "swagger-ui.js" in str(x)][0]
         # print(f"bundle: {bundle}")
         swag_bundle_url = ""
         if urllib.parse.urlparse(bundle).scheme != "":
@@ -200,7 +214,7 @@ class SwaggerDetector:
             response = requests.get(swag_bundle_url, timeout=5)
             matches = re.search(r" * @version v[0-9a-z.]*", response.text)
             result = matches[0].split(" ")[2]
-        except (requests.exceptions.RequestException, IndexError):
+        except (requests.exceptions.RequestException, IndexError, TypeError):
             result = "v2"
         return result
 
@@ -213,12 +227,13 @@ class SwaggerDetector:
         Returns:
         version (string): semver version of swagger-ui used (hopefully exact) or None
         """
+        logging.debug(url)
         srcs = []
         try:
             response = requests.get(url, timeout=5)
             soup = BeautifulSoup(response.text, features="lxml")
             srcs = [x.get("src") for x in soup.find_all("script")]
-        except (requests.exceptions.RequestException, IndexError):
+        except (requests.exceptions.RequestException, IndexError, TypeError):
             return None
         major_version = self.detect_major(srcs)
         if major_version == 3:
@@ -230,7 +245,7 @@ class SwaggerDetector:
 
 
 if __name__ == "__main__":
-    g = GitObject()
+    g = SwaggerGitSearcher()
     s = SwaggerDetector(g)
     p = SnykParser()
     p.load_vulnerabilities()
