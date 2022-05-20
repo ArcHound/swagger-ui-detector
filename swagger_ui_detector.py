@@ -259,6 +259,9 @@ class SwaggerDetector:
 def estimate(delta, percent):
     return math.floor(delta.seconds * (100 - percent) / percent)
 
+def print_vulns(url, vulns):
+    click.echo(url)
+    click.echo(vulns)
 
 @click.command()
 @click.option(
@@ -299,7 +302,6 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
             else:
                 logging.info("Directory is not empty.")
                 # TODO: check for repo
-                click.echo(git.Repo(swagger_ui_repo).git_dir)
         else:
             logging.warn("Cloning swagger-ui repository, this might take a while...")
             git.Repo.clone_from(swagger_ui_git_source, swagger_ui_repo)
@@ -315,7 +317,6 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
         lines = f.read().splitlines()
         logging.info(f"Got {len(lines)} URLs to try...")
         checks = {math.floor(len(lines) * x / 20): x * 5 for x in range(20)}
-        click.echo(checks)
         counter = 0
         start_time = datetime.now()
         for url in lines:
@@ -327,8 +328,7 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
             ver = s.get_swagger_ui_version(url)
             if ver is not None and ver != "None":
                 vulns = p.get_vulnerabilities_of_version(ver)
-                click.echo(url)
-                click.echo(vulns)
+                print_vulns(url, vulns)
             else:
                 logging.info(f"Failed to detect version of {url}")
     logging.info("Done.")
