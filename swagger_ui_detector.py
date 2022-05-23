@@ -284,26 +284,30 @@ def print_vulns(url, ver, vulns):
 @click.option(
     "--swagger-ui-repo",
     default="./swagger-ui",
+    show_default=True,
     help="Local repository containing swagger-ui",
 )
 @click.option(
     "--swagger-ui-git-source",
     default="https://github.com/swagger-api/swagger-ui",
+    show_default=True,
     help="GIT URL of swagger-ui",
 )
 @click.option(
     "--url-list",
-    default="./swaggers.txt",
+    prompt_required=True,
     help="File containing URLs pointing to swagger-uis",
 )
 @click.option(
     "--snyk-url",
     default="https://security.snyk.io/vuln/npm?search=swagger-ui",
+    show_default=True,
     help="Snyk URL containing swagger-ui vulnerabilities",
 )
 @click.option(
     "--get-repo",
     default=True,
+    show_default=True,
     help="Boolean, specifies whether should the script get swagger-ui repo from github",
 )
 def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
@@ -327,6 +331,9 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
     s = SwaggerDetector(g)
     p = SnykParser(vuln_url=snyk_url)
     p.load_vulnerabilities()
+    if url_list is None:
+        logging.error(f"--url-list option is required! Aborting.")
+        return
     if not os.path.isfile(url_list):
         logging.error(f"URL File {url_list} doesn't exist! Aborting.")
         return
