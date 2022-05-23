@@ -126,11 +126,11 @@ class SwaggerGitSearcher:
         elif shorthash == "7f92cd3c":
             return "v3.7.0"
         versions = self.g.tag(contains=shorthash).split("\n")
+        if "$GIT_TAG" in versions:
+            versions.remove("$GIT_TAG")
         if len(versions) > 0:
-            if versions[0] == "$GIT_TAG":
-                return versions[1]
-            else:
-                return versions[0]
+            versions.sort(key=version.parse)
+            return versions[0]
         else:
             logging.info(f'Unable to find version for tag "{shorthash}".')
             return None
@@ -259,9 +259,16 @@ class SwaggerDetector:
 def estimate(delta, percent):
     return math.floor(delta.seconds * (100 - percent) / percent)
 
-def print_vulns(url, vulns):
-    click.echo(url)
-    click.echo(vulns)
+
+def print_vulns(url, ver, vulns):
+    vulnerable = False
+    xss = False
+    if len(vulns) > 0:
+        vulnerable = True
+    if len([x for x in vulns if "XSS" in x["name"]]) > 0:
+        xss = True
+    click.echo(f"{url};{ver};{vulnerable};{xss}")
+
 
 @click.command()
 @click.option(
@@ -320,7 +327,7 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
         counter = 0
         start_time = datetime.now()
         for url in lines:
-            if counter in checks:
+            if counter in checks and counter != 0:
                 delta = datetime.now() - start_time
                 sec = estimate(delta, checks[counter])
                 logging.info(f"Status: {checks[counter]}%, estimated {sec}s left.")
@@ -328,7 +335,7 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
             ver = s.get_swagger_ui_version(url)
             if ver is not None and ver != "None":
                 vulns = p.get_vulnerabilities_of_version(ver)
-                print_vulns(url, vulns)
+                print_vulns(url, ver, vulns)
             else:
                 logging.info(f"Failed to detect version of {url}")
     logging.info("Done.")
