@@ -261,14 +261,13 @@ def estimate(delta, percent):
 
 
 def print_vulns(url, ver, vulns):
-    click.echo(f"")
-    click.echo(f"URL {url}")
-    click.echo(f"---------")
-    click.echo(f"Detected swagger-ui version {ver}.")
-    click.echo(f"")
     vulnerable = False
     xss = False
+    click.echo(f"")
     if len(vulns) > 0:
+        click.echo(f"URL {url} - [VULNERABLE] Version {ver}")
+        click.echo(f"---------")
+        click.echo(f"")
         vulnerable = True
         click.echo(f"This swagger-ui is vulnerable to:")
         for v in vulns:
@@ -276,6 +275,8 @@ def print_vulns(url, ver, vulns):
             link = v["link"]
             click.echo(f"  - [{name}]({link})")
     else:
+        click.echo(f"URL {url} - [OK] Version {ver}")
+        click.echo(f"---------")
         click.echo(f"This swagger-ui is not vulnerable.")
     click.echo(f"")
 
