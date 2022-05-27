@@ -9,6 +9,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class SwaggerClassifier:
     """Attempts to detect swagger version based on a set of heuristics, needs a git repository of swagger-ui"""
 
@@ -127,5 +128,3 @@ class SwaggerClassifier:
             return self.detect_minor_2(url, srcs)
         else:
             return None
-
-

@@ -22,12 +22,16 @@ logging.basicConfig(
 def estimate(delta, percent):
     return math.floor(delta.seconds * (100 - percent) / percent)
 
-def print_vulns(url, ver, vulns):
+
+def print_vulns(url, ver, vulns, one_line):
     vulnerable = False
     xss = False
-    click.echo(f"")
+    if not one_line:
+        click.echo(f"")
     if len(vulns) > 0:
         click.echo(f"URL {url} - [VULNERABLE] Version {ver}")
+        if one_line:
+            return
         click.echo(f"---------")
         click.echo(f"")
         vulnerable = True
@@ -36,10 +40,17 @@ def print_vulns(url, ver, vulns):
             name = v["name"]
             link = v["link"]
             click.echo(f"  - [{name}]({link})")
-    else:
+    elif ver is not None:
         click.echo(f"URL {url} - [OK] Version {ver}")
+        if one_line:
+            return
         click.echo(f"---------")
         click.echo(f"This swagger-ui is not vulnerable.")
+    elif ver is None:
+        click.echo(f"URL {url} - [UNKNOWN] Version unknown.")
+        if one_line:
+            return
+        click.echo(f"---------")
     click.echo(f"")
 
 
@@ -69,11 +80,23 @@ def print_vulns(url, ver, vulns):
 )
 @click.option(
     "--get-repo",
+    is_flag=True,
+    flag_value=True,
     default=True,
     show_default=True,
     help="Boolean, specifies whether should the script get swagger-ui repo from github",
 )
-def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
+@click.option(
+    "--one-line",
+    is_flag=True,
+    flag_value=True,
+    default=False,
+    show_default=True,
+    help="Boolean, whether to print one line of output per URL.",
+)
+def main(
+    swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo, one_line
+):
     if get_repo:
         if os.path.isdir(swagger_ui_repo):
             logging.info("Directory for swagger-ui repo already exists.")
@@ -115,9 +138,8 @@ def main(swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo):
                 logging.info(f"Status: {checks[counter]}%, estimated {sec}s left.")
             counter += 1
             ver = s.get_swagger_ui_version(url)
+            vulns = []
             if ver is not None and ver != "None":
                 vulns = p.get_vulnerabilities_of_version(ver)
-                print_vulns(url, ver, vulns)
-            else:
-                logging.info(f"Failed to detect version of {url}")
+            print_vulns(url, ver, vulns, one_line)
     logging.info("Done.")

@@ -7,6 +7,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class GitSearcher:
     """Object to search the repository for a hash, returns version of software that has it
 
@@ -44,4 +45,3 @@ class GitSearcher:
         else:
             log.info(f'Unable to find version for tag "{shorthash}".')
             return None
-

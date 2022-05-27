@@ -6,6 +6,7 @@ import requests
 import urllib.parse
 
 import logging
+
 log = logging.getLogger(__name__)
 
 
@@ -81,4 +82,3 @@ class SnykParser:
             if self.is_version_vulnerable(in_version, vuln["version"]):
                 result.append(vuln)
         return result
-
