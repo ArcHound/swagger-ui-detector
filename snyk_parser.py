@@ -40,7 +40,7 @@ class SnykParser:
             new_vuln["name"] = tr.find_all("td")[0].find("a").text.strip()
             new_vuln["version"] = (
                 tr.find_all("td")[1]
-                .find("span", class_="vulns-table__semver")
+                .find("span", class_="semver")
                 .text.strip()
             )
             self.vulnerabilities.append(new_vuln)
@@ -82,3 +82,9 @@ class SnykParser:
             if self.is_version_vulnerable(in_version, vuln["version"]):
                 result.append(vuln)
         return result
+
+if __name__ == "__main__":
+    snyk_url = "https://snyk.io/vuln/npm:swagger-ui"
+    p = SnykParser(snyk_url)
+    p.load_vulnerabilities()
+    print(p.get_vulnerabilities_of_version("v2.2.2"))
