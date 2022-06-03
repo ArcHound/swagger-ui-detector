@@ -97,6 +97,7 @@ def print_vulns(url, ver, vulns, one_line):
 def main(
     swagger_ui_repo, swagger_ui_git_source, url_list, snyk_url, get_repo, one_line
 ):
+    # Check if user inputed sane options
     if get_repo:
         if os.path.isdir(swagger_ui_repo):
             logging.info("Directory for swagger-ui repo already exists.")
@@ -129,18 +130,20 @@ def main(
             logging.warn("Cloning swagger-ui repository, this might take a while...")
             git.Repo.clone_from(swagger_ui_git_source, swagger_ui_repo)
     logging.info(f"Using local swagger-ui repository at {swagger_ui_repo}")
-    # for some reason these are not in the repository
-    swagger_ui_special_cases = {"a6656ced": "v3.17.1", "7f92cd3c": "v3.7.0"}
-    gs = GitSearcher(repo=swagger_ui_repo, special_cases=swagger_ui_special_cases)
-    s = SwaggerClassifier(gs)
-    p = SnykParser(vuln_url=snyk_url)
-    p.load_vulnerabilities()
     if url_list is None:
         logging.error(f"--url-list option is required! Aborting.")
         return
     if not os.path.isfile(url_list):
         logging.error(f"URL File {url_list} doesn't exist! Aborting.")
         return
+
+    # Start once sane options have been verified
+    # for some reason these are not in the repository
+    swagger_ui_special_cases = {"a6656ced": "v3.17.1", "7f92cd3c": "v3.7.0"}
+    gs = GitSearcher(repo=swagger_ui_repo, special_cases=swagger_ui_special_cases)
+    s = SwaggerClassifier(gs)
+    p = SnykParser(vuln_url=snyk_url)
+    p.load_vulnerabilities()
     with open(url_list, "r") as f:
         lines = f.read().splitlines()
         logging.info(f"Got {len(lines)} URLs to try...")
