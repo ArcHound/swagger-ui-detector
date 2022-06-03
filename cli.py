@@ -108,7 +108,23 @@ def main(
                 git.Repo.clone_from(swagger_ui_git_source, swagger_ui_repo)
             else:
                 logging.info("Directory is not empty.")
-                # TODO: check for repo
+                try:
+                    repo = git.Repo(swagger_ui_repo)
+                    _ = repo.git_dir
+                    if swagger_ui_git_source in [
+                        url for remote in repo.remotes for url in remote.urls
+                    ]:
+                        logging.info(
+                            f"Directory is a valid swagger-ui dir with remote {swagger_ui_git_source}"
+                        )
+                    else:
+                        logging.info(
+                            f"Remote {swagger_ui_git_source} not found in directory {swagger_ui_repo}. Aborting!"
+                        )
+                        return
+                except git.exc.InvalidGitRepositoryError:
+                    logging.info("Directory is not a git repository! Aborting.")
+                    return
         else:
             logging.warn("Cloning swagger-ui repository, this might take a while...")
             git.Repo.clone_from(swagger_ui_git_source, swagger_ui_repo)

@@ -38,7 +38,7 @@ Options:
 				[default: https://github.com/swagger-api/swagger-ui]
   --url-list TEXT               File containing URLs pointing to swagger-uis
   --snyk-url TEXT               Snyk URL containing swagger-ui vulnerabilities
-                                [default: https://security.snyk.io/vuln/npm?search=swagger-ui]
+				[default: https://snyk.io/vuln/npm:swagger-ui]
   --get-repo                    Boolean, specifies whether to get the swagger-ui repo from github  
 				[default: True]
   --one-line                    Boolean, whether to print one line of output per URL.  
@@ -50,7 +50,10 @@ Options:
 ### Examples:
 
 Redirect logs:
+```
+```
 
 Redirect output:
-
+```
+```
 
