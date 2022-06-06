@@ -39,7 +39,7 @@ class GitSearcher:
         versions = self.g.tag(contains=shorthash).split("\n")
         if "$GIT_TAG" in versions:
             versions.remove("$GIT_TAG")
-        if len(versions) > 0:
+        if len(versions) > 0 and versions != [""]:
             versions.sort(key=version.parse)
             return versions[0]
         else:
