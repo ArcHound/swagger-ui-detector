@@ -6,9 +6,9 @@ import git
 import math
 import os
 
-from git_searcher import GitSearcher
-from swagger_classifier import SwaggerClassifier
-from snyk_parser import SnykParser
+from src.git_searcher import GitSearcher
+from src.swagger_classifier import SwaggerClassifier
+from src.snyk_parser import SnykParser
 
 import logging
 
