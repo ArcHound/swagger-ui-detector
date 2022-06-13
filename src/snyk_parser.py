@@ -34,7 +34,7 @@ class SnykParser:
                 f"Failed to load vulnerabilities from {self.vuln_url} - {str(e)}."
             )
             return
-        soup = BeautifulSoup(resp.text, features="lxml")
+        soup = BeautifulSoup(resp.text, features="html.parser")
         for tr in soup.find("table").find("tbody").find_all("tr"):
             new_vuln = dict()
             new_vuln["link"] = urllib.parse.urljoin(

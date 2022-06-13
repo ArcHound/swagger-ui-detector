@@ -116,7 +116,7 @@ class SwaggerClassifier:
         srcs = []
         try:
             response = requests.get(url, timeout=5)
-            soup = BeautifulSoup(response.text, features="lxml")
+            soup = BeautifulSoup(response.text, features="html.parser")
             srcs = [x.get("src") for x in soup.find_all("script")]
         except requests.exceptions.RequestException as e:
             log.error(f"Failed to get swagger-ui - {str(e)}")
