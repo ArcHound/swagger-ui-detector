@@ -47,6 +47,5 @@ class GitSearcher:
                 log.info(f'Unable to find version for tag "{shorthash}".')
                 return None
         except git.exc.GitCommandError as e:
-            err = ' '.join(str(e).split('\n'))
+            err = " ".join(str(e).split("\n"))
             log.error(f"Git tag lookup error, {err}")
-
