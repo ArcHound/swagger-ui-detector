@@ -21,3 +21,13 @@ class TestGitSearcher(unittest.TestCase):
                 ver = gs.get_version_from_shorthash(scenario["query"])
                 self.assertEqual(ver, scenario["result"], msg=sc_name)
 
+    def test_git_search_exc(self):
+        repo = "test"
+        scenarios = {"missing_tag_git":{"special_cases":{'bbbbbb':"v1.0"}, "mock_response":"", "query":"aaaaaa", "result":None}}
+        for sc_name, scenario in scenarios.items():
+            with patch('git.cmd.Git') as MockGit:
+                gs = GitSearcher(repo=repo, special_cases=scenario["special_cases"])
+                gs.g.tag = Mock(return_value=scenario["mock_response"])
+                gs.g.tag.side_effect = git.exc.GitCommandError('tag mishap')
+                ver = gs.get_version_from_shorthash(scenario["query"])
+                self.assertEqual(ver, scenario["result"], msg=sc_name)
