@@ -118,6 +118,9 @@ def main(
                         logging.info(
                             f"Directory is a valid swagger-ui dir with remote {swagger_ui_git_source}"
                         )
+                        logging.info(f"Pulling for updates...")
+                        repo.remotes.origin.pull()
+                        logging.info(f"Repo should be up-to-date")
                     else:
                         logging.info(
                             f"Remote {swagger_ui_git_source} not found in directory {swagger_ui_repo}. Aborting!"

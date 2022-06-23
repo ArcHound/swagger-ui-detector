@@ -11,6 +11,8 @@ Get versions of many Swagger-UIs specified in a URL list.
 
 But first, ensure access to a local [swagger-ui](https://github.com/swagger-api/swagger-ui) github repository (either point to a path or let the script clone it).
 
+Detection method is basically from the [official source](https://swagger.io/docs/open-source-tools/swagger-ui/usage/version-detection/)
+
 For each URL, the script attempts to detect a version:
   - for major version 2 or less, try searching `swagger-ui.js` file
   - for major version 3 or more, search `swagger-ui-bundle.js` for a git reference and get version from local swagger-ui github repository.
