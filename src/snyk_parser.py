@@ -42,7 +42,7 @@ class SnykParser:
             )
             new_vuln["name"] = tr.find_all("td")[0].find("a").text.strip()
             new_vuln["version"] = (
-                tr.find_all("td")[1].find("span", class_="semver").text.strip()
+                tr.find_all("td")[1].find("span", class_="vue--chip vulnerable-versions__chip vue--chip--default").text.strip()
             )
             self.vulnerabilities.append(new_vuln)
         log.info(f"Loaded {len(self.vulnerabilities)} vulnerabilities.")
