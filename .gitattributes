@@ -1,1 +1,2 @@
-tests/ linguist-vendored=false
+src/** linguist-vendored
+tests/** linguist-vendored=false
