@@ -74,7 +74,7 @@ def print_vulns(url, ver, vulns, one_line):
 )
 @click.option(
     "--snyk-url",
-    default="https://snyk.io/vuln/npm:swagger-ui",
+    default="https://security.snyk.io/package/npm/swagger-ui",
     show_default=True,
     help="Snyk URL containing swagger-ui vulnerabilities",
 )
