@@ -20,11 +20,15 @@ class SnykParser:
     def __init__(self, vuln_url):
         self.vuln_url = vuln_url
         self.base_url = f"{urllib.parse.urlparse(vuln_url).scheme}://{urllib.parse.urlparse(vuln_url).netloc}/"
+        self.got_vulns = False
+
+    def parsed_vulnerabilities_successfully(self):
+        return self.got_vulns
 
     def load_vulnerabilities(self):
         """Parse html table into vulnerabilities using heuristics (i.e. look at it and figure out what you want)"""
         log.info(f"Load vulnerabilities from {self.vuln_url} ...")
-        self.vulnerabilities = []
+        self.vulnerabilities = list()
         try:
             resp = requests.get(self.vuln_url)
             if resp.status_code != 200:
@@ -34,17 +38,23 @@ class SnykParser:
                 f"Failed to load vulnerabilities from {self.vuln_url} - {str(e)}."
             )
             return
-        soup = BeautifulSoup(resp.text, features="html.parser")
-        for tr in soup.find("table").find("tbody").find_all("tr"):
-            new_vuln = dict()
-            new_vuln["link"] = urllib.parse.urljoin(
-                self.base_url, tr.find_all("td")[0].find("a").get("href")
-            )
-            new_vuln["name"] = tr.find_all("td")[0].find("a").text.strip()
-            new_vuln["version"] = (
-                tr.find_all("td")[1].find("span", class_="vue--chip vulnerable-versions__chip vue--chip--default").text.strip()
-            )
-            self.vulnerabilities.append(new_vuln)
+        try:
+            soup = BeautifulSoup(resp.text, features="html.parser")
+            for tr in soup.find("table").find("tbody").find_all("tr"):
+                new_vuln = dict()
+                new_vuln["link"] = urllib.parse.urljoin(
+                    self.base_url, tr.find_all("td")[0].find("a").get("href")
+                )
+                new_vuln["name"] = tr.find_all("td")[0].find("a").text.strip()
+                new_vuln["version"] = (
+                    tr.find_all("td")[1].find("span", class_="vue--chip vulnerable-versions__chip vue--chip--default").text.strip()
+                )
+                self.vulnerabilities.append(new_vuln)
+        except Exception as e: # I know, I know...
+            log.error(f"Failed to parse response from {self.vuln_url} - {str(e)}.")
+            return
+        if len(self.vulnerabilities) > 0:
+            self.got_vulns = True
         log.info(f"Loaded {len(self.vulnerabilities)} vulnerabilities.")
 
     def is_version_vulnerable(self, in_version, vuln_version):

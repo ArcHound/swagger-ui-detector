@@ -23,12 +23,12 @@ def estimate(delta, percent):
     return math.floor(delta.seconds * (100 - percent) / percent)
 
 
-def print_vulns(url, ver, vulns, one_line):
+def print_vulns(url, ver, vulns, one_line, parser_success):
     vulnerable = False
     xss = False
     if not one_line:
         click.echo(f"")
-    if len(vulns) > 0:
+    if len(vulns) > 0 and parser_success:
         click.echo(f"URL {url} - [VULNERABLE] Version {ver}")
         if one_line:
             return
@@ -40,12 +40,18 @@ def print_vulns(url, ver, vulns, one_line):
             name = v["name"]
             link = v["link"]
             click.echo(f"  - [{name}]({link})")
-    elif ver is not None:
+    elif ver is not None and parser_success:
         click.echo(f"URL {url} - [OK] Version {ver}")
         if one_line:
             return
         click.echo(f"---------")
         click.echo(f"This swagger-ui is not vulnerable.")
+    elif ver is not None and not parser_success:
+        click.echo(f"URL {url} - [UNKNOWN] Version {ver}")
+        if one_line:
+            return
+        click.echo(f"---------")
+        click.echo(f"Couldn't parse vulnerabilities.")
     elif ver is None:
         click.echo(f"URL {url} - [UNKNOWN] Version unknown.")
         if one_line:
@@ -147,6 +153,7 @@ def main(
     s = SwaggerClassifier(gs)
     p = SnykParser(vuln_url=snyk_url)
     p.load_vulnerabilities()
+    parser_success = p.parsed_vulnerabilities_successfully()
     with open(url_list, "r") as f:
         lines = f.read().splitlines()
         logging.info(f"Got {len(lines)} URLs to try...")
@@ -163,5 +170,5 @@ def main(
             vulns = []
             if ver is not None and ver != "None":
                 vulns = p.get_vulnerabilities_of_version(ver)
-            print_vulns(url, ver, vulns, one_line)
+            print_vulns(url, ver, vulns, one_line, parser_success)
     logging.info("Done.")
